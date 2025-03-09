@@ -1,0 +1,31 @@
+[package]
+name = "clunk"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+#proc-macro = true
+path = "src/lib.rs"
+
+[[bin]]
+name = "clunk"
+path = "src/main.rs"
+
+[dependencies.clunk_error]
+path = "src/error"
+
+[dependencies.clunk_macro]
+path = "src/macro"
+
+[workspace]
+members = [
+    "src/error",
+    "src/macro",
+]
+
+[dependencies]
+mlua = { version = "0.9.9", features = ["lua54", "macros", "serialize", "vendored"] }
+quote = "1.0.37"
+regex = "1.11.1"
+syn = "2.0.85"
+thiserror = "1.0.65"

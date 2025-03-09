@@ -1,0 +1,12 @@
+[package]
+name = "clunk_error"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+path = "mod.rs"
+
+[dependencies]
+mlua = { version = "0.9.9", features = ["lua54", "vendored"] }
+regex = "1.11.1"
+thiserror = "1.0.65"
