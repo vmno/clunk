@@ -1,3 +1,4 @@
+#![feature(trace_macros)]
 //
 use mlua::{chunk, Function, Lua, MetaMethod, Table, UserData, UserDataMethods, Value, Variadic};
 
@@ -139,6 +140,7 @@ fn main() -> Result<(), clunk_error::ClunkError> {
     println!("Hello, world!");
 
     let modpath = "tests/data/bad-syntax.lua";
+    trace_macros!(true);
 
     let lc: clunk::Clunk<Things> = match clunk::Clunk::load(modpath, "things", Some("myc")) {
         Ok(lc) => lc,

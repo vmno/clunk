@@ -12,5 +12,6 @@ path = "../error"
 
 [dependencies]
 mlua = { version = "0.9.9", features = ["lua54", "macros", "serialize", "vendored"] }
+proc-macro2 = "1.0.94"
 quote = "1.0.37"
 syn = "2.0.85"
