@@ -1,14 +1,8 @@
-//
-//#![feature(trace_macros)]
-use mlua;
 use proc_macro2::TokenStream;
-use quote::{quote, quote_spanned};
-use syn::spanned::Spanned;
-use syn::{
-    parse_macro_input, parse_quote, Data, DeriveInput, Fields, GenericParam, Generics, Index,
-};
+use quote::quote;
+use syn::{parse_macro_input, parse_quote, Data, DeriveInput, Fields};
 
-use clunk_error;
+//use clunk_error;
 
 //trace_macros!(true);
 
@@ -38,7 +32,7 @@ fn debug_macro(ts: TokenStream) -> TokenStream {
 
 /// `FromLuaConfig` derive macro that can be used to generate a `FromLua` impl for a user struct.
 /// Allows a lua table to be converted into a rust struct.
-/// 
+///
 /// Supports the `#[ignore_field]` attribute on fields to skip deserialization and use Default::default().
 ///
 #[proc_macro_derive(FromLuaConfig, attributes(ignore_field))]
@@ -57,9 +51,13 @@ pub fn from_lua_table(input: proc_macro::TokenStream) -> proc_macro::TokenStream
     };
 
     // Collect types of fields that have #[ignore_field] attribute for Default bounds
-    let ignored_field_types: Vec<_> = fields.iter()
+    let ignored_field_types: Vec<_> = fields
+        .iter()
         .filter(|field| {
-            field.attrs.iter().any(|attr| attr.path().is_ident("ignore_field"))
+            field
+                .attrs
+                .iter()
+                .any(|attr| attr.path().is_ident("ignore_field"))
         })
         .map(|field| &field.ty)
         .collect();
@@ -70,13 +68,13 @@ pub fn from_lua_table(input: proc_macro::TokenStream) -> proc_macro::TokenStream
         let default_bounds = ignored_field_types.iter().map(|ty| {
             quote! { #ty: Default }
         });
-        
+
         if where_clause.is_none() {
             where_clause = Some(parse_quote! { where #(#default_bounds),* });
         } else {
             let existing_predicates = &where_clause.as_ref().unwrap().predicates;
-            where_clause = Some(parse_quote! { 
-                where #existing_predicates, #(#default_bounds),* 
+            where_clause = Some(parse_quote! {
+                where #existing_predicates, #(#default_bounds),*
             });
         }
     }

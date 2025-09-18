@@ -49,10 +49,11 @@ impl From<LuaError> for ClunkError {
         match e {
             // in this case the table has a field that is a table and that field could not be
             // parsed
-            LuaError::FromLuaConversionError { from, to, message }
-                if message.is_some()
-                    && message.as_ref().unwrap().contains("nested table field") =>
-            {
+            LuaError::FromLuaConversionError {
+                from: _,
+                to: _,
+                message,
+            } if message.is_some() && message.as_ref().unwrap().contains("nested table field") => {
                 // ugly but whatever. we'll just extract the parent field and field from the
                 // message
                 let parent_field =
@@ -76,9 +77,12 @@ impl From<LuaError> for ClunkError {
 
             // these are instances where a table field was missing or an incorrect type in the lua
             // config and everything else seems fine
-            LuaError::FromLuaConversionError { from, to, message }
-                if message.is_some()
-                    && message.as_ref().unwrap().contains("table is missing field") =>
+            LuaError::FromLuaConversionError {
+                from: _,
+                to: _,
+                message,
+            } if message.is_some()
+                && message.as_ref().unwrap().contains("table is missing field") =>
             {
                 let field = message.clone().unwrap()[message.as_ref().unwrap().find("`").unwrap()
                     ..(message.as_ref().unwrap().rfind("`").unwrap() + 1)]
@@ -97,7 +101,7 @@ impl From<LuaError> for ClunkError {
             {
                 let re = Regex::new(r".+`(\w+)`.+expected: (\w+)").unwrap();
                 let caps = re.captures(message.as_ref().unwrap()).unwrap();
-                let (field, expected) = (
+                let (field, _expected) = (
                     caps.get(1).unwrap().as_str().to_string(),
                     caps.get(2).unwrap().as_str().to_string(),
                 );

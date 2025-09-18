@@ -66,7 +66,7 @@ pub fn make_lua_context(table_name: &str, module_name: Option<&str>) -> ClunkRes
         // no module is passed, so the config data and struct will be loaded directly from
         // <table_name>, meaning that in rust `struct MyConfig {..}` will be loaded directly from
         // `package.loaded.<table_name>` in lua
-        let module = if module_name.is_none() {
+        let _module = if module_name.is_none() {
             //
             match get_or_create_lua_module(&lua, table_name) {
                 Some(m) => m,
@@ -125,7 +125,7 @@ fn add_filepath_module_function(
 ) -> Result<(), mlua::Error> {
     let globals = lua.globals();
     let package: Table<'_> = globals.get("package")?;
-    let loaded: Table<'_> = package.get("loaded")?;
+    let _loaded: Table<'_> = package.get("loaded")?;
     let module = get_lua_module(lua, module_name).unwrap();
 
     module.set("config_filepath", config_path)?;
@@ -145,6 +145,7 @@ pub struct Clunk<T> {
     /// submodule within our custom lua module that contains the actual config data
     pub module_name: Option<String>,
     /// lua context
+    #[allow(dead_code)]
     lua: Option<mlua::Lua>,
     /// the config data
     pub data: T,
@@ -182,8 +183,7 @@ where
             add_filepath_module_function(&lua, table_name, config_path.as_ref().to_str().unwrap())?;
         }
 
-        lua
-            .load(std::fs::read_to_string(&config_path)?.as_str())
+        lua.load(std::fs::read_to_string(&config_path)?.as_str())
             .exec()?;
 
         //match loaded.get(module_name).ok()? {
