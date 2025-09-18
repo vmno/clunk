@@ -1,8 +1,6 @@
-#![feature(trace_macros)]
+//#![feature(trace_macros)]
 //
-use mlua::{chunk, Function, Lua, MetaMethod, Table, UserData, UserDataMethods, Value, Variadic};
-
-use clunk;
+use mlua::{Lua, Table, UserData, Value};
 
 fn eg0() {
     let lua = Lua::new();
@@ -45,19 +43,6 @@ struct EgData0 {
 }
 
 impl UserData for EgData0 {}
-
-/*
-impl FromLua<'_> for EgData0 {
-    fn from_lua(value: Value, lua: &Lua) -> Result<Self> {
-        let tbl = value.as_table().unwrap();
-        let msg = tbl.get::<_, String>("msg")?;
-        //let id = tbl.get::<_, u32>("id")?;
-        //Ok(EgData0 { msg, id })
-        let id = tbl.get::<_, Option<u32>>("id")?;
-        Ok(EgData0 { msg, id: id })
-    }
-}
-*/
 
 fn eg2() {
     let lua = Lua::new();

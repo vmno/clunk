@@ -4,11 +4,12 @@
  * file: lib.rs
  * desc: main clunk library.
  */
-pub use clunk_error::{ClunkError, ClunkResult};
-pub use clunk_macro::FromLuaConfig;
-
 pub use ::mlua;
 use mlua::{Lua, Table, Value};
+use std::path::Path;
+
+pub use clunk_error::{ClunkError, ClunkResult};
+pub use clunk_macro::FromLuaConfig;
 
 /// Given some lua context, this will return the module with the given name.
 /// The module is returned as a lua Table.
@@ -111,6 +112,12 @@ pub fn make_lua_context(table_name: &str, module_name: Option<&str>) -> ClunkRes
 ///   module_name, lua module name which contains the config data
 ///   config_path, the filepath to the config file
 ///
+
+//impl<'lua> Table<'lua>
+//pub fn set<K, V>(&self, key: K, value: V) -> Result<()>
+//where
+//    K: IntoLua<'lua>,
+//    V: IntoLua<'lua>,
 fn add_filepath_module_function(
     lua: &Lua,
     module_name: &str,
@@ -119,7 +126,7 @@ fn add_filepath_module_function(
     let globals = lua.globals();
     let package: Table<'_> = globals.get("package")?;
     let loaded: Table<'_> = package.get("loaded")?;
-    let module = get_lua_module(&lua, module_name).unwrap();
+    let module = get_lua_module(lua, module_name).unwrap();
 
     module.set("config_filepath", config_path)?;
 
@@ -129,6 +136,7 @@ fn add_filepath_module_function(
 /// A clunk represents a loaded config file. Contains all the necessary metadata and the required
 /// lua context for the config.
 ///
+#[derive(Debug)]
 pub struct Clunk<T> {
     /// filepath to the config
     pub config_path: String,
@@ -158,20 +166,24 @@ where
     ///  module_name, an optional module within the lua script that contains the table (above)
     ///               which contains the config data
     pub fn load(
-        config_path: &str,
+        config_path: impl AsRef<Path>,
         table_name: &str,
         module_name: Option<&str>,
     ) -> Result<Self, ClunkError> {
         let lua = make_lua_context(table_name, module_name)?;
 
         if module_name.is_some() {
-            add_filepath_module_function(&lua, module_name.unwrap(), config_path)?;
+            add_filepath_module_function(
+                &lua,
+                module_name.unwrap(),
+                config_path.as_ref().to_str().unwrap(),
+            )?;
         } else {
-            add_filepath_module_function(&lua, table_name, config_path)?;
+            add_filepath_module_function(&lua, table_name, config_path.as_ref().to_str().unwrap())?;
         }
 
-        let _ = lua
-            .load(std::fs::read_to_string(config_path)?.as_str())
+        lua
+            .load(std::fs::read_to_string(&config_path)?.as_str())
             .exec()?;
 
         //match loaded.get(module_name).ok()? {
@@ -198,7 +210,10 @@ where
         };
 
         Ok(Self {
-            config_path: config_path.to_string(),
+            config_path: std::path::PathBuf::from(config_path.as_ref())
+                .into_os_string()
+                .into_string()
+                .unwrap(),
             table_name: table_name.to_string(),
             module_name: module_name.map(|s| s.to_string()),
             lua: Some(lua),

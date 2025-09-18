@@ -38,8 +38,10 @@ fn debug_macro(ts: TokenStream) -> TokenStream {
 
 /// `FromLuaConfig` derive macro that can be used to generate a `FromLua` impl for a user struct.
 /// Allows a lua table to be converted into a rust struct.
+/// 
+/// Supports the `#[ignore_field]` attribute on fields to skip deserialization and use Default::default().
 ///
-#[proc_macro_derive(FromLuaConfig)]
+#[proc_macro_derive(FromLuaConfig, attributes(ignore_field))]
 pub fn from_lua_table(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     // the name of the struct
@@ -54,11 +56,48 @@ pub fn from_lua_table(input: proc_macro::TokenStream) -> proc_macro::TokenStream
         _ => unimplemented!(),
     };
 
+    // Collect types of fields that have #[ignore_field] attribute for Default bounds
+    let ignored_field_types: Vec<_> = fields.iter()
+        .filter(|field| {
+            field.attrs.iter().any(|attr| attr.path().is_ident("ignore_field"))
+        })
+        .map(|field| &field.ty)
+        .collect();
+
+    // Create where clause with Default bounds for ignored fields
+    let mut where_clause = where_clause.cloned();
+    if !ignored_field_types.is_empty() {
+        let default_bounds = ignored_field_types.iter().map(|ty| {
+            quote! { #ty: Default }
+        });
+        
+        if where_clause.is_none() {
+            where_clause = Some(parse_quote! { where #(#default_bounds),* });
+        } else {
+            let existing_predicates = &where_clause.as_ref().unwrap().predicates;
+            where_clause = Some(parse_quote! { 
+                where #existing_predicates, #(#default_bounds),* 
+            });
+        }
+    }
+
     let fields = fields.iter().map(|field| {
         let ident = field.ident.as_ref().unwrap();
         let ty = &field.ty;
 
-        quote! {
+        // Check if field has #[ignore_field] attribute
+        let has_ignore = field.attrs.iter().any(|attr| {
+            attr.path().is_ident("ignore_field")
+        });
+
+        if has_ignore {
+            // For ignored fields, use Default::default()
+            quote! {
+                #ident: Default::default()
+            }
+        } else {
+            // Normal field processing
+            quote! {
             #ident: {
                 let value = table.get(stringify!(#ident)).or_else(|e| {
                     match e {
@@ -176,6 +215,7 @@ pub fn from_lua_table(input: proc_macro::TokenStream) -> proc_macro::TokenStream
                     }
                 })?
             }
+        }
         }
     });
 

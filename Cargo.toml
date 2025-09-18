@@ -7,10 +7,6 @@ edition = "2021"
 #proc-macro = true
 path = "src/lib.rs"
 
-[[bin]]
-name = "clunk"
-path = "src/main.rs"
-
 [dependencies.clunk_error]
 path = "src/error"
 
